@@ -1,0 +1,9 @@
+# GenAI Summarizer: Advanced NLP & Text Intelligence Assistant - Dependency Manifest
+# Course: Generative AI with NLP Training
+
+streamlit>=1.30.0
+transformers>=4.38.0
+torch>=2.1.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pytest>=7.4.0
