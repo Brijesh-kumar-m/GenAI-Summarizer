@@ -16,10 +16,10 @@
    - Model: Google Flan-T5 Seq2Seq
    - TF-IDF Keyword Extraction
    - Flesch Readability Score & Reading Time
-6. [Top 50 Viva Questions & Simple Answers (Comprehensive List)](#6-top-50-viva-questions--answers)
+6. [Top 52 Viva Questions & Simple Answers (Comprehensive List)](#6-top-52-viva-questions--answers)
    - [Part A: General & Conceptual Questions (Q1 - Q25)](#part-a-general--conceptual-questions)
    - [Part B: Deep Technical, Math & Code Questions (Q26 - Q40)](#part-b-deep-technical-math--code-questions)
-   - [Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) - Tech Deep Dive (Q41 - Q50)](#part-c-document-ingestion-pdf--audio-synthesis-tts---tech-deep-dive)
+   - [Part C: Document Ingestion (PDF, Word, TXT, MD) & Audio Synthesis (TTS) (Q41 - Q52)](#part-c-document-ingestion-pdf-word-txt-md--audio-synthesis-tts)
 7. [Emergency Tips (Agar Presentation ke dauran kuch issue aaye)](#7-emergency-troubleshooting)
 
 ---
@@ -167,7 +167,7 @@ ai_text_summarizer_nlp/
 
 ---
 
-## 6. Top 50 Viva Questions & Answers
+## 6. Top 52 Viva Questions & Answers
 
 ### Part A: General & Conceptual Questions
 
@@ -392,7 +392,7 @@ Pipeline 6 stages me execute hota hai:
 
 ---
 
-### Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) - Tech Deep Dive
+### Part C: Document Ingestion (PDF, Word, TXT, MD) & Audio Synthesis (TTS)
 
 #### Q41. PDF file se text kaise extract hota hai? (pypdf library ka architecture)
 **Ans:** 
@@ -454,7 +454,27 @@ Modern neural Text-to-Speech system 4 core technological stages me kaam karta ha
 **Ans:** 
 1. Jab user file drag-and-drop karta hai, browser HTTP multipart/form-data POST request bhejta hai.
 2. Streamlit backend us uploaded content ko `UploadedFile` object me encapsulate karta hai jo internally `io.BytesIO` interface inherit karta hai.
-3. Hamara code `uploaded_file` ko directly `pypdf.PdfReader(uploaded_file)` me stream karta hai — **zero temporary disk files create hoti hain**, jisse file upload instantaneous aur memory-safe rehta hai.
+3. Hamara code `uploaded_file` ko directly `pypdf.PdfReader(uploaded_file)` ya `extract_text_from_docx(uploaded_file)` me stream karta hai — **zero temporary disk files create hoti hain**, jisse file upload instantaneous aur memory-safe rehta hai.
+
+#### Q51. Hamare project me "All-Format File Support (.pdf, .docx, .txt, .md)" ke liye kaun-kaunsi technologies use hui hain?
+**Ans:** 
+Hamne 4 alag-alag file formats ke liye dedicated parser pipeline banayi hai:
+
+| File Format | Technology / Library | Working Mechanism |
+|---|---|---|
+| **📄 PDF (.pdf)** | `pypdf` (`pypdf.PdfReader`) | Binary streams se font glyph tables decode karta hai aur page-by-page clean strings extract karta hai. |
+| **📝 Word (.docx)** | `python-docx` + pure-Python `zipfile` fallback | Office Open XML (`word/document.xml`) ko parse karke paragraphs aur text runs extract karta hai. |
+| **📑 Text (.txt)** | Native Python `decode("utf-8")` | Direct standard Unicode stream decoding. |
+| **📋 Markdown (.md)** | Native Python `decode("utf-8")` | Markdown text ko load karke headers/bullets preserve karta hai. |
+
+#### Q52. Microsoft Word (.docx) file internally kya hoti hai aur bina MS Word software ke Python isse text kaise nikalta hai?
+**Ans:** 
+1. **Internal Architecture:** Ek `.docx` file actually ek **Zipped Archive (ZIP container)** hoti hai jisme Microsoft ka Office Open XML (OOXML) schema store hota hai.
+2. **Text Location:** Sara document content `word/document.xml` file ke andar XML format me rehta hai.
+3. **Extraction Logic:** 
+   - Primary: `python-docx` library document paragraphs ko extract karti hai.
+   - Dual-Defense Fallback: Agar `python-docx` me koi issue aaye, toh hamara code Python ke built-in `zipfile` module se `.docx` ko unzip karke `xml.etree.ElementTree` se `<w:p>` (paragraphs) aur `<w:t>` (text runs) tags ko parse kar leta hai.  
+   Is wajah se hamara system **bina Microsoft Office install kiye** kisi bhi Word document ka 100% accurate text seconds me nikal leta hai.
 
 ---
 
