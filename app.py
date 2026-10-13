@@ -29,6 +29,7 @@ from text_utils import (
     format_complete_report_txt,
     format_as_bullet_points,
     extract_text_from_pdf,
+    extract_text_from_docx,
     generate_audio_summary,
 )
 from keyword_extractor import extract_keywords
@@ -484,19 +485,27 @@ with sample_col4:
     st.button("🗑️ Clear", on_click=clear_input_text, use_container_width=True, help="Clear input text.")
 
 # Optional File Upload Expander
-with st.expander("📂 Or upload a document (.pdf, .txt, .md)", expanded=False):
+with st.expander("📂 Or upload a document (.pdf, .docx, .txt, .md)", expanded=False):
     uploaded_file = st.file_uploader(
         "Upload a document from your computer",
-        type=["pdf", "txt", "md"],
-        help="Select a PDF or text file to extract and summarize.",
+        type=["pdf", "docx", "txt", "md"],
+        help="Select a PDF, Word (.docx), or text file to extract and summarize.",
     )
     if uploaded_file is not None:
         try:
-            if uploaded_file.name.lower().endswith(".pdf"):
+            filename_lower = uploaded_file.name.lower()
+            if filename_lower.endswith(".pdf"):
                 success, file_text, pages = extract_text_from_pdf(uploaded_file)
                 if success:
                     st.session_state["text_input_area"] = file_text
                     st.success(f"📄 Successfully extracted text from '{uploaded_file.name}' ({pages} pages, {count_words(file_text):,} words)")
+                else:
+                    st.error(f"⚠️ {file_text}")
+            elif filename_lower.endswith(".docx"):
+                success, file_text = extract_text_from_docx(uploaded_file)
+                if success:
+                    st.session_state["text_input_area"] = file_text
+                    st.success(f"📄 Successfully extracted Word document '{uploaded_file.name}' ({count_words(file_text):,} words)")
                 else:
                     st.error(f"⚠️ {file_text}")
             else:

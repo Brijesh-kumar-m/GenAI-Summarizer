@@ -21,6 +21,7 @@ from text_utils import (
     format_summary_txt,
     format_complete_report_txt,
     extract_text_from_pdf,
+    extract_text_from_docx,
     generate_audio_summary,
 )
 
@@ -158,3 +159,13 @@ def test_generate_audio_summary_empty_text():
     success, audio_bytes, msg = generate_audio_summary("")
     assert success is False
     assert audio_bytes is None
+
+
+def test_extract_text_from_docx_invalid_stream():
+    """Test DOCX extraction handles invalid stream gracefully."""
+    import io
+    fake_stream = io.BytesIO(b"corrupted word doc content")
+    success, text = extract_text_from_docx(fake_stream)
+    assert success is False
+    assert "Failed" in text or "no readable text" in text
+

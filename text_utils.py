@@ -505,3 +505,47 @@ def generate_audio_summary(text: str) -> Tuple[bool, Optional[bytes], str]:
     except Exception as exc:
         return False, None, f"Audio synthesis unavailable: {str(exc)}"
 
+
+def extract_text_from_docx(file_stream) -> Tuple[bool, str]:
+    """
+    Extracts text content from an uploaded Word document (.docx).
+    
+    Args:
+        file_stream: File-like object (bytes or upload stream).
+        
+    Returns:
+        Tuple[bool, str]: (success, extracted_text)
+    """
+    # 1. Try python-docx
+    try:
+        import docx
+        doc = docx.Document(file_stream)
+        paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+        full_text = "\n\n".join(paragraphs).strip()
+        if full_text:
+            return True, clean_text(full_text)
+    except Exception:
+        pass
+
+    # 2. Pure-Python zipfile + XML fallback
+    try:
+        import zipfile
+        import xml.etree.ElementTree as ET
+        file_stream.seek(0)
+        with zipfile.ZipFile(file_stream) as z:
+            xml_content = z.read("word/document.xml")
+            tree = ET.fromstring(xml_content)
+            ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            paragraphs = []
+            for p in tree.iter(f"{{{ns}}}p"):
+                texts = [node.text for node in p.iter(f"{{{ns}}}t") if node.text]
+                if texts:
+                    paragraphs.append("".join(texts).strip())
+            full_text = "\n\n".join([p for p in paragraphs if p]).strip()
+            if not full_text:
+                return False, "DOCX file contains no readable text."
+            return True, clean_text(full_text)
+    except Exception as exc:
+        return False, f"Failed to extract text from Word document: {str(exc)}"
+
+
