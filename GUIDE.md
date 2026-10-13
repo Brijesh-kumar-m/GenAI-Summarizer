@@ -16,7 +16,9 @@
    - Model: Google Flan-T5 Seq2Seq
    - TF-IDF Keyword Extraction
    - Flesch Readability Score & Reading Time
-6. [Top 25 Viva Questions & Simple Answers (Examiner Questions)](#6-top-25-viva-questions--answers)
+6. [Top 40 Viva Questions & Simple Answers (General + Deep Technical)](#6-top-40-viva-questions--answers)
+   - [Part A: General & Conceptual Questions (Q1 - Q25)](#part-a-general--conceptual-questions)
+   - [Part B: Deep Technical, Math & Code Questions (Q26 - Q40)](#part-b-deep-technical-math--code-questions)
 7. [Emergency Tips (Agar Presentation ke dauran kuch issue aaye)](#7-emergency-troubleshooting)
 
 ---
@@ -164,7 +166,9 @@ ai_text_summarizer_nlp/
 
 ---
 
-## 6. Top 25 Viva Questions & Answers
+## 6. Top 40 Viva Questions & Answers
+
+### Part A: General & Conceptual Questions
 
 #### Q1. Aapke project ka title aur purpose kya hai?
 **Ans:** Project ka title hai **"GenAI Summarizer: Advanced NLP & Text Intelligence Assistant"**. Iska purpose lambe documents, news articles, aur educational text ko short, accurate summary me convert karna hai using Deep Learning Generative AI, sath hi keywords extract karna aur readability metrics calculate karna.
@@ -277,6 +281,113 @@ Flan-T5 decoder in bounds ko follow karke generation stop karta hai.
 #### Q25. Agar examiner puche: "Ye project aapne internet se copy kiya hai ya banaya hai?", toh kya bolein?
 **Ans:** 
 > *"Sir/Ma'am, humne Hugging Face ke open-source pre-trained Flan-T5 weights aur Scikit-Learn algorithms ka use karke pura custom pipeline khud architect kiya hai. Humne custom sentence boundary handling (jo abbreviations jaise 'Dr.' ya 'e.g.' par break nahi hoti), dual-engine comparative laboratory, Flesch readability scoring, pure-python fallback mechanisms aur automated pytest unit test suite design kiya hai."*
+
+---
+
+### Part B: Deep Technical, Math & Code Questions
+
+#### Q26. Tokenization kya hoti hai aur Flan-T5 me kaunsa Tokenizer use hua hai?
+**Ans:** 
+- **Tokenization:** Raw text string ko chhote meaningful pieces (tokens) me convert karna, jise neural network numerical IDs ke roop me process kar sake.
+- **Tokenizer Type:** T5 me **SentencePiece (Subword BPE)** tokenizer use hota hai.
+- **Faayda:** Subword tokenization se "Out-of-Vocabulary (OOV)" problem solve ho jati hai. Agar koi naya ya rare word aata hai (jaise "neurotechnology"), to ye use "neuro" aur "technology" subwords me break karke handle kar leta hai.
+
+#### Q27. Self-Attention ka mathematical formula kya hai? Explain Query, Key, Value.
+**Ans:** 
+Transformer ka core formula hai:
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$$
+- **Q (Query):** Current token jo information dhundh raha hai ("Main kya dhundh raha hu?").
+- **K (Key):** Baaki sare tokens ka label/address ("Mere paas kya information hai?").
+- **V (Value):** Actual content/features jo token represent karta hai.
+- **$\sqrt{d_k}$:** Scaling factor jo dot product ke values ko normalize rakhta hai taaki softmax gradients vanish na hon.
+- **Softmax:** Attention weights (probabilities between 0 and 1) generate karta hai.
+
+#### Q28. Encoder-Decoder architecture me "Cross-Attention" kya hota hai?
+**Ans:** 
+- **Self-Attention:** Decoder sirf apne pichhle generated words par dhyan deta hai.
+- **Cross-Attention:** Decoder ka Query vector ($Q$) encoder ke Key ($K$) aur Value ($V$) vectors ke sath interact karta hai.  
+Isse summary generate karte waqt decoder ko pata hota hai ki **original source document** ke kis part par focus karna hai.
+
+#### Q29. Transformers me Positional Encoding ki kya zarurat hoti hai?
+**Ans:** 
+RNNs ya LSTMs me words sequential order me ek-ek karke jaate the. Lekin Transformer me sare words **ek sath parallel me** process hote hain.  
+Bina positional information ke model ko pata nahi chalega ki "Dog bites man" aur "Man bites dog" me kya farak hai. Isliye har token ke embedding vector me **Positional Encoding** add ki jati hai jo word ki sequence position batati hai.
+
+#### Q30. "Flan-T5" me FLAN ka full form aur significance kya hai?
+**Ans:** 
+- **FLAN:** **F**inetuned **L**anguage **N**et.
+- **Significance:** Standard T5 model unsupervised text corruption par train hua tha. Lekin Google ne FLAN me use **1,000+ instruction-based tasks** par fine-tune kiya (Instruction Tuning). Is wajah se Flan-T5 `"summarize: "` jaise natural language commands ko bina kisi extra fine-tuning ke directly samajh kar accurate response deta hai (Zero-shot / Few-shot ability).
+
+#### Q31. Summarization model ki quality measure karne ke liye kaunsa metric use hota hai? (ROUGE Score)
+**Ans:** 
+Text Summarization evaluate karne ke liye **ROUGE (Recall-Oriented Understudy for Gisting Evaluation)** use hota hai:
+1. **ROUGE-1:** Original summary aur generated summary ke beech single words (unigram) ka overlap.
+2. **ROUGE-2:** Consecutive two-word pairs (bigrams) ka overlap (fluency check karta hai).
+3. **ROUGE-L:** **Longest Common Subsequence (LCS)** par based hota hai, jo sentence structure aur word order check karta hai.
+
+#### Q32. Beam Search vs Greedy Search vs Top-p (Nucleus) Sampling me kya difference hai?
+**Ans:** 
+- **Greedy Search:** Har step par sirf highest probability wala ek word chunta hai. Fast hai lekin globally sub-optimal sentences produce kar sakta hai.
+- **Beam Search (`num_beams=4`):** Ek time par top 4 most probable partial paths explore karta hai aur highest cumulative probability wali sequence select karta hai. Summarization ke liye best aur deterministic hota hai.
+- **Top-p (Nucleus) Sampling:** Creative writing (jaise chatbots, story generation) me use hota hai jisme probability threshold $p$ ke andar random selection hoti hai. Summarization me hallucination avoid karne ke liye hum Beam Search prefer karte hain.
+
+#### Q33. `no_repeat_ngram_size=3` parameter code me kya karta hai?
+**Ans:** 
+Seq2Seq language models me kabhi-kabhi repetitive loops ban jate hain (jaise: *"the doctor said that the doctor said that..."*).  
+`no_repeat_ngram_size=3` enforce karta hai ki koi bhi 3 consecutive words ka sequence puri generated summary me doosri baar repeat na ho sake. Isse summary concise aur redundant-free banti hai.
+
+#### Q34. Custom regex sentence splitting abbreviations (Dr., e.g., Pvt., Ltd.) ko kaise handle karti hai?
+**Ans:** 
+Agar hum simple `text.split('.')` karenge, to "Dr. Smith visited ABC Pvt. Ltd." 4 galat tukdo me toot jayega!  
+Hamne `text_utils.py` me custom regex pattern banaya hai jo:
+1. Known title abbreviations (`Mr.`, `Dr.`, `Prof.`, `Inc.`, `Ltd.`, `e.g.`, `i.e.`) ko identify karta hai.
+2. Negative lookbehind/lookahead use karke decimal numbers (jaise 3.14) aur abbreviations ke periods ko sentence boundary treat nahi karta.
+3. Sirf wahi periods jinke baad whitespace aur Capital letter ho, unhe true sentence boundaries maanta hai.
+
+#### Q35. Extractive NLP Fallback Engine ka mathematical logic kya hai?
+**Ans:** 
+Hamare `summarizer.py` me extractive sentence scoring 3 steps me kaam karta hai:
+1. **Word Frequency Weights:** Document ke sabhi non-stopword words ki term frequency $f(w)$ calculate hoti hai aur max frequency se divide karke normalize hoti hai: $W(w) = \frac{f(w)}{\max(f)}$.
+2. **Sentence Scoring:** Har sentence ka score usme aane wale words ke weights ka sum hota hai, jise sentence length se normalize kiya jata hai:  
+   $$\text{Score}(S) = \frac{\sum_{w \in S} W(w)}{\text{Length}(S)^{0.8}}$$
+   *(Length penalty isliye lagayi hai taaki bina wajah ke lambe sentences unfair advantage na lein).*
+3. **Chronological Selection:** Top-K highest scoring sentences ko choose karke unke original document order me preserve karke summary banayi jaati hai.
+
+#### Q36. TF-IDF me Inverse Document Frequency (IDF) ka formula kya hota hai?
+**Ans:** 
+$$\text{IDF}(t) = \ln\left(\frac{1 + N}{1 + \text{df}(t)}\right) + 1$$
+- $N$ = Total documents (ya sentences) in collection.
+- $\text{df}(t)$ = Document frequency (kitne documents me term $t$ aaya).
+- Smooth IDF (+1) zero-division prevent karta hai.  
+Agar koi word har sentence me maujood hai toh uska IDF score almost zero ho jayega, aur jo word specific sentence me aaya hai uska score high hoga.
+
+#### Q37. PyTorch Tensors aur NumPy Arrays me kya fundamental difference hai?
+**Ans:** 
+1. **Autograd Engine:** PyTorch Tensors computational graph create karte hain aur automatic differentiation (`loss.backward()`) support karte hain, jo training aur gradients ke liye essential hai.
+2. **Hardware Acceleration:** PyTorch Tensors seamless tarike se CPU se GPU (`tensor.to('cuda')`) move ho sakte hain matrix multiplications ke liye. Hamare project me CPU execution use ho rahi hai (`torch.FloatTensor`).
+
+#### Q38. Model Caching aur Memory Management kaise handle kiya gaya hai?
+**Ans:** 
+Deep learning models 300MB+ memory lete hain.  
+1. Humne `summarizer.py` me **Singleton Design Pattern** ke through `ModelManager` class banayi hai.
+2. Jab app pehli baar run hoti hai, tabhi model RAM me load hota hai (`_instance._model`).
+3. Streamlit app jab rerun hoti hai (har button click par), tab model dobara disk se load nahi hota, balki cached instance directly use hota hai. Isse latency < 2 seconds rehti hai.
+
+#### Q39. Model training loss function kaunsa use hota hai Seq2Seq models me?
+**Ans:** 
+Flan-T5 jaise sequence generation models **Cross-Entropy Loss (Negative Log-Likelihood)** par train hote hain:
+$$\mathcal{L} = -\sum_{t=1}^{T} \log P(y_t \mid y_{<t}, X)$$
+Har step $t$ par ground-truth token $y_t$ ki predicted probability maximize ki jaati hai given input sequence $X$ aur pichhle generated tokens $y_{<t}$ (Teacher Forcing).
+
+#### Q40. Raw text input se le kar final summary output tak ka Complete Data Flow Pipeline kya hai?
+**Ans:** 
+Pipeline 6 stages me execute hota hai:
+1. **Input Preprocessing:** Text clean hota hai, whitespace normalize hoti hai, validation check pass hota hai (min 15 words, max 8000 chars).
+2. **Prompt Formatting:** Input ke aage prefix lagta hai: `"summarize: " + clean_text`.
+3. **Tokenization:** `AutoTokenizer` text ko numerical token IDs aur attention masks me convert karta hai.
+4. **Encoder Forward Pass:** Encoder 80M parameters wale Transformer self-attention blocks ke through hidden state representations compute karta hai.
+5. **Autoregressive Decoding:** Decoder beam search ke through step-by-step target tokens predict karta hai jab tak EOS (End of Sequence) token na aaye ya `max_length` reach na ho.
+6. **Detokenization & Formatting:** Token IDs wapas human-readable string me decode hote hain aur metrics (reading time, Flesch score, TF-IDF keywords) sath me bind hoke UI par display hote hain.
 
 ---
 
