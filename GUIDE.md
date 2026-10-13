@@ -16,9 +16,10 @@
    - Model: Google Flan-T5 Seq2Seq
    - TF-IDF Keyword Extraction
    - Flesch Readability Score & Reading Time
-6. [Top 40 Viva Questions & Simple Answers (General + Deep Technical)](#6-top-40-viva-questions--answers)
+6. [Top 45 Viva Questions & Simple Answers (Comprehensive List)](#6-top-45-viva-questions--answers)
    - [Part A: General & Conceptual Questions (Q1 - Q25)](#part-a-general--conceptual-questions)
    - [Part B: Deep Technical, Math & Code Questions (Q26 - Q40)](#part-b-deep-technical-math--code-questions)
+   - [Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) (Q41 - Q45)](#part-c-document-ingestion-pdf--audio-synthesis-tts)
 7. [Emergency Tips (Agar Presentation ke dauran kuch issue aaye)](#7-emergency-troubleshooting)
 
 ---
@@ -166,7 +167,7 @@ ai_text_summarizer_nlp/
 
 ---
 
-## 6. Top 40 Viva Questions & Answers
+## 6. Top 45 Viva Questions & Answers
 
 ### Part A: General & Conceptual Questions
 
@@ -388,6 +389,41 @@ Pipeline 6 stages me execute hota hai:
 4. **Encoder Forward Pass:** Encoder 80M parameters wale Transformer self-attention blocks ke through hidden state representations compute karta hai.
 5. **Autoregressive Decoding:** Decoder beam search ke through step-by-step target tokens predict karta hai jab tak EOS (End of Sequence) token na aaye ya `max_length` reach na ho.
 6. **Detokenization & Formatting:** Token IDs wapas human-readable string me decode hote hain aur metrics (reading time, Flesch score, TF-IDF keywords) sath me bind hoke UI par display hote hain.
+
+---
+
+### Part C: Document Ingestion (PDF) & Audio Synthesis (TTS)
+
+#### Q41. PDF file se text kaise extract hota hai? (pypdf library ka architecture)
+**Ans:** 
+Humne open-source Python library **`pypdf`** use ki hai:
+1. `pypdf.PdfReader` binary stream ko parse karke PDF ke internal cross-reference table aur content streams ko decode karta hai.
+2. Har page ke text content streams me se font encoding maps aur glyph operators ko decode karke string form me text extract hota hai (`page.extract_text()`).
+3. Multi-page documents ke extracted text ko clean paragraphs me concatenate karke word counts aur character validation check pass karwaya jata hai.
+
+#### Q42. Agar user Scanned Image PDF ya corrupt PDF upload kare, toh kya system crash hoga?
+**Ans:** 
+**Nahi!** Humne defensive exception handling lagayi hai:
+- Agar PDF corrupted hai ya password-protected hai, toh code `try-except` block me gracefully handle hota hai aur user ko clean error message deta hai: *"Failed to extract text from PDF"*.
+- Agar PDF scanned image hai (jisme text glyphs nahi balki pure pixels hote hain), toh `page.extract_text()` empty string return karta hai. Hamara function ise detect karke inform karta hai: *"PDF appears to be empty or contains scanned images"*. (Future Scope: Tesseract OCR integration).
+
+#### Q43. Audio Summary (Text-to-Speech) feature ka working mechanism kya hai?
+**Ans:** 
+Text-to-Speech synthesis ke liye humne **`gTTS` (Google Text-to-Speech)** engine use kiya hai:
+1. **Punctuation & Token Sanitization:** Synthesis se pehle summary text me se bullet marks (`•`, `-`, `*`) clean kiye jate hain taaki pronunciation natural lage.
+2. **Speech Synthesis:** Clean text ko gTTS audio model me pass karke spoken voice phonemes aur waveforms synthesize kiye jate hain.
+3. **In-Memory Streaming:** Audio data ko RAM ke andar `io.BytesIO` buffer me encode kiya jata hai aur Streamlit ke native `st.audio()` player me MP3 format me feed kar diya jata hai.
+
+#### Q44. Audio ko hard drive par `.mp3` file save karne ke bajaye In-Memory Buffer (`io.BytesIO`) me kyu rakha gaya?
+**Ans:** 
+1. **Performance & Speed:** Hard disk I/O slow hota hai, jabki RAM me buffer operations micro-seconds me execute hote hain.
+2. **Server Disk Cleanliness:** Agar har request par disk me `.mp3` files banti raheingi, toh disk space quickly fill ho jayega aur storage cleanup jobs chalane padenge.
+3. **Multi-User Safety:** Disk par file save karne se concurrent users ke beech filename collision (race condition) ho sakti hai. In-memory stream har session ke liye completely isolated rehti hai.
+
+#### Q45. Kya Text-to-Speech audio sunte waqt internet connection chahiye?
+**Ans:** 
+`gTTS` engine lightweight cloud phonetic synthesis API use karta hai. Isliye is feature ke liye active internet connection chahiye hota hai.  
+Lekin agar offline environment ho, toh UI par warning display hoti hai aur application summarize karna continue rakhti hai bina kisi rukawat ke (Extractive fallback aur Generative models dono fully offline chalte hain).
 
 ---
 
