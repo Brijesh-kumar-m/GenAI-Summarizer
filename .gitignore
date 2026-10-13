@@ -27,3 +27,6 @@ desktop.ini
 # Output / temporary analysis reports
 *.log
 scratch/
+
+# Private college viva guide (local only)
+GUIDE.md
