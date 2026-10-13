@@ -28,6 +28,8 @@ from text_utils import (
     format_summary_txt,
     format_complete_report_txt,
     format_as_bullet_points,
+    extract_text_from_pdf,
+    generate_audio_summary,
 )
 from keyword_extractor import extract_keywords
 from summarizer import (
@@ -482,18 +484,26 @@ with sample_col4:
     st.button("🗑️ Clear", on_click=clear_input_text, use_container_width=True, help="Clear input text.")
 
 # Optional File Upload Expander
-with st.expander("📂 Or upload a text file (.txt, .md)", expanded=False):
+with st.expander("📂 Or upload a document (.pdf, .txt, .md)", expanded=False):
     uploaded_file = st.file_uploader(
         "Upload a document from your computer",
-        type=["txt", "md"],
-        help="Select a plain text file to load into the summarizer.",
+        type=["pdf", "txt", "md"],
+        help="Select a PDF or text file to extract and summarize.",
     )
     if uploaded_file is not None:
         try:
-            file_text = uploaded_file.read().decode("utf-8")
-            if file_text.strip():
-                st.session_state["text_input_area"] = file_text
-                st.success(f"Loaded {uploaded_file.name} ({count_words(file_text):,} words)")
+            if uploaded_file.name.lower().endswith(".pdf"):
+                success, file_text, pages = extract_text_from_pdf(uploaded_file)
+                if success:
+                    st.session_state["text_input_area"] = file_text
+                    st.success(f"📄 Successfully extracted text from '{uploaded_file.name}' ({pages} pages, {count_words(file_text):,} words)")
+                else:
+                    st.error(f"⚠️ {file_text}")
+            else:
+                file_text = uploaded_file.read().decode("utf-8")
+                if file_text.strip():
+                    st.session_state["text_input_area"] = file_text
+                    st.success(f"📄 Loaded '{uploaded_file.name}' ({count_words(file_text):,} words)")
         except Exception as e:
             st.error(f"Error reading file: {e}")
 
@@ -705,6 +715,22 @@ if st.session_state.summary_output is not None and st.session_state.stats_output
             """,
             unsafe_allow_html=True,
         )
+
+        # Voice Audio Player (Text-to-Speech)
+        tts_col1, tts_col2 = st.columns([1, 2])
+        with tts_col1:
+            if st.button("🔊 Listen to Summary (TTS)", key="btn_audio_gen", use_container_width=True, help="Convert summary text into voice audio."):
+                with st.spinner("Synthesizing voice audio..."):
+                    ok_audio, audio_bytes, audio_msg = generate_audio_summary(display_summary)
+                    if ok_audio and audio_bytes:
+                        st.session_state["cached_audio_bytes"] = audio_bytes
+                        st.success("Audio ready!")
+                    else:
+                        st.warning(f"Audio notice: {audio_msg}")
+
+        with tts_col2:
+            if st.session_state.get("cached_audio_bytes"):
+                st.audio(st.session_state["cached_audio_bytes"], format="audio/mp3")
 
         # Quick Copy Codeblock for immediate 1-click clipboard copy
         with st.expander("📋 One-Click Copy Container", expanded=False):

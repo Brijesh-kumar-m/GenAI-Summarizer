@@ -452,3 +452,56 @@ Note: Always verify critical data against the original source document.
 ================================================================================
 """
     return report
+
+
+def extract_text_from_pdf(file_stream) -> Tuple[bool, str, int]:
+    """
+    Extracts text content from an uploaded PDF file stream.
+    
+    Args:
+        file_stream: File-like object (bytes or upload stream).
+        
+    Returns:
+        Tuple[bool, str, int]: (success, extracted_text, page_count)
+    """
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(file_stream)
+        total_pages = len(reader.pages)
+        extracted = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                extracted.append(t.strip())
+        full_text = "\n\n".join(extracted).strip()
+        if not full_text:
+            return False, "PDF appears to be empty or contains only scanned images.", total_pages
+        return True, clean_text(full_text), total_pages
+    except Exception as exc:
+        return False, f"Failed to extract text from PDF: {str(exc)}", 0
+
+
+def generate_audio_summary(text: str) -> Tuple[bool, Optional[bytes], str]:
+    """
+    Generates an MP3 audio bytes stream from text using Google Text-to-Speech (gTTS).
+    
+    Args:
+        text (str): Summary text to synthesize.
+        
+    Returns:
+        Tuple[bool, Optional[bytes], str]: (success, mp3_bytes, message)
+    """
+    if not text or not text.strip():
+        return False, None, "Text is empty."
+    try:
+        from io import BytesIO
+        from gtts import gTTS
+        clean_speech_text = re.sub(r"[•\-\*]", "", text).strip()
+        tts = gTTS(text=clean_speech_text, lang="en", slow=False)
+        fp = BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return True, fp.read(), "Audio generated successfully."
+    except Exception as exc:
+        return False, None, f"Audio synthesis unavailable: {str(exc)}"
+

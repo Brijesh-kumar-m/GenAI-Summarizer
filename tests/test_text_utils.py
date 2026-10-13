@@ -20,6 +20,8 @@ from text_utils import (
     get_text_statistics,
     format_summary_txt,
     format_complete_report_txt,
+    extract_text_from_pdf,
+    generate_audio_summary,
 )
 
 
@@ -140,3 +142,19 @@ def test_output_formatting():
     assert "COMPLETE ANALYSIS REPORT" in report
     assert "TF-IDF Score" in report
     assert "Original text here." in report
+
+
+def test_extract_text_from_pdf_invalid_stream():
+    """Test PDF extraction handles corrupted or non-PDF streams gracefully."""
+    import io
+    fake_stream = io.BytesIO(b"not a real pdf file content")
+    success, text, pages = extract_text_from_pdf(fake_stream)
+    assert success is False
+    assert "Failed" in text or "empty" in text
+
+
+def test_generate_audio_summary_empty_text():
+    """Test audio synthesis handles empty text safely."""
+    success, audio_bytes, msg = generate_audio_summary("")
+    assert success is False
+    assert audio_bytes is None
