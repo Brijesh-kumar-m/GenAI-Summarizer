@@ -16,10 +16,10 @@
    - Model: Google Flan-T5 Seq2Seq
    - TF-IDF Keyword Extraction
    - Flesch Readability Score & Reading Time
-6. [Top 45 Viva Questions & Simple Answers (Comprehensive List)](#6-top-45-viva-questions--answers)
+6. [Top 50 Viva Questions & Simple Answers (Comprehensive List)](#6-top-50-viva-questions--answers)
    - [Part A: General & Conceptual Questions (Q1 - Q25)](#part-a-general--conceptual-questions)
    - [Part B: Deep Technical, Math & Code Questions (Q26 - Q40)](#part-b-deep-technical-math--code-questions)
-   - [Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) (Q41 - Q45)](#part-c-document-ingestion-pdf--audio-synthesis-tts)
+   - [Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) - Tech Deep Dive (Q41 - Q50)](#part-c-document-ingestion-pdf--audio-synthesis-tts---tech-deep-dive)
 7. [Emergency Tips (Agar Presentation ke dauran kuch issue aaye)](#7-emergency-troubleshooting)
 
 ---
@@ -167,7 +167,7 @@ ai_text_summarizer_nlp/
 
 ---
 
-## 6. Top 45 Viva Questions & Answers
+## 6. Top 50 Viva Questions & Answers
 
 ### Part A: General & Conceptual Questions
 
@@ -392,7 +392,7 @@ Pipeline 6 stages me execute hota hai:
 
 ---
 
-### Part C: Document Ingestion (PDF) & Audio Synthesis (TTS)
+### Part C: Document Ingestion (PDF) & Audio Synthesis (TTS) - Tech Deep Dive
 
 #### Q41. PDF file se text kaise extract hota hai? (pypdf library ka architecture)
 **Ans:** 
@@ -424,6 +424,37 @@ Text-to-Speech synthesis ke liye humne **`gTTS` (Google Text-to-Speech)** engine
 **Ans:** 
 `gTTS` engine lightweight cloud phonetic synthesis API use karta hai. Isliye is feature ke liye active internet connection chahiye hota hai.  
 Lekin agar offline environment ho, toh UI par warning display hoti hai aur application summarize karna continue rakhti hai bina kisi rukawat ke (Extractive fallback aur Generative models dono fully offline chalte hain).
+
+#### Q46. PDF parsing ke liye PyPDF hi kyu chuna? PyMuPDF (fitz) ya PDFMiner kyu nahi?
+**Ans:** 
+1. **Pure Python Architecture:** `pypdf` 100% pure Python me likhi gayi hai. Iske liye kisi C/C++ compiler ya external system DLL dependencies ki zarurat nahi hoti, jisse Windows aur Linux dono par installation zero-conflict rehti hai.
+2. **Lightweight Footprint:** PyMuPDF aur PDFMiner heavy binary wheels download karte hain jo cloud deployments (jaise Streamlit Cloud) par package size limit exceed kar sakte hain. `pypdf` ka package size sirf ~400 KB hai!
+3. **No External Licensing Risk:** `pypdf` permissive open-source license par based hai.
+
+#### Q47. Text-to-Speech (TTS) Pipeline ka Deep Learning / Engineering Architecture kya hota hai?
+**Ans:** 
+Modern neural Text-to-Speech system 4 core technological stages me kaam karta hai:
+1. **Text Normalization:** Raw text me numbers ("2026" ➔ "twenty twenty-six"), currency ("$10" ➔ "ten dollars"), aur symbols ko phonetically expand kiya jata hai.
+2. **Grapheme-to-Phoneme (G2P) Conversion:** Alphabet letters ko phonetic representation (IPA phonemes jaise `/fəˈnɛtɪk/`) me map kiya jata hai.
+3. **Acoustic Model:** Neural network (jaise Tacotron 2 ya FastSpeech) phonemes se **Mel-Spectrogram** (time-frequency pitch aur energy representation) generate karta hai.
+4. **Neural Vocoder:** WaveNet ya HiFi-GAN vocoder us mel-spectrogram ko continuous raw audio waveforms (PCM samples) me synthesize karta hai, jo end me MP3 frames me compress hota hai.
+
+#### Q48. Audio compression me MP3 format kyu use kiya? WAV ya OGG kyu nahi?
+**Ans:** 
+1. **WAV (Uncompressed PCM):** Raw audio data store karta hai jiska size 10x-20x bada hota hai (e.g. 1 minute speech ~10 MB). Web par itna bada audio transmit karna latency badhata hai.
+2. **MP3 (MPEG-1 Audio Layer III):** Psychoacoustic perceptual lossy compression algorithm use karta hai. Ye insani kaano ki inaudible frequencies ko compress karke file size **~90% reduce** kar deta hai (1 minute speech ~500 KB) bina voice clarity loose kiye.
+3. **Universal Browser Compatibility:** Sabhi browsers (Chrome, Edge, Safari, Firefox) bina kisi extra codec plugin ke HTML5 `<audio>` tag me MP3 natively stream kar sakte hain.
+
+#### Q49. Python me `io.BytesIO` aur `io.StringIO` me kya technological difference hai?
+**Ans:** 
+- **`io.StringIO`:** In-memory stream of **Unicode text characters** (`str`). Text data (jaise CSV ya TXT) ko buffer karne ke liye use hota hai.
+- **`io.BytesIO`:** In-memory stream of **Raw Binary Bytes** (`bytes` / `b'...'`). Multimedia files (jaise PDF documents, images, aur MP3 audio frames) binary bytes me encoded hoti hain, isliye audio generation aur PDF reading ke liye `io.BytesIO` mandatory hota hai.
+
+#### Q50. Streamlit me File Upload backend par technically kaise execute hota hai?
+**Ans:** 
+1. Jab user file drag-and-drop karta hai, browser HTTP multipart/form-data POST request bhejta hai.
+2. Streamlit backend us uploaded content ko `UploadedFile` object me encapsulate karta hai jo internally `io.BytesIO` interface inherit karta hai.
+3. Hamara code `uploaded_file` ko directly `pypdf.PdfReader(uploaded_file)` me stream karta hai — **zero temporary disk files create hoti hain**, jisse file upload instantaneous aur memory-safe rehta hai.
 
 ---
 
